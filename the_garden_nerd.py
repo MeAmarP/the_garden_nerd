@@ -12,4 +12,18 @@ We can leverage this power of deep learning to build models that can classify an
 Total 102 categories of flowers:
     train - Contains 18540 images
     test  - Contains 2009 images
+
+TODO:
+# * Check no of images available per class
+# * Decide upon model architecture to be applied.
+# * 
 """
+
+import pandas as pd
+
+path_to_train_csv = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\train.csv'
+path_to_test_csv = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\test.csv'
+
+train_df = pd.read_csv(path_to_train_csv)
+test_df = pd.read_csv(path_to_test_csv)
+
