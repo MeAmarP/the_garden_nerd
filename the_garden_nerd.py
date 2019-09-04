@@ -6,24 +6,39 @@ Author: apotdar
 '''
 
 """[Flower Recognition - Deep Learning]
-The application of deep learning is rapidly growing in the field of computer vision and is helping in building powerful classification and identification models. 
-We can leverage this power of deep learning to build models that can classify and differentiate between different species of flower as well.
+The application of deep learning is rapidly growing in the field of computer vision
+and is helping in building powerful classification and identification models.
+We can leverage this power of deep learning to build models that can classify
+and differentiate between different species of flower as well.
 
 Total 102 categories of flowers:
     train - Contains 18540 images
     test  - Contains 2009 images
 
 TODO:
+# * Add Column in dframe for img_path
 # * Check no of images available per class
 # * Decide upon model architecture to be applied.
-# * 
 """
 
-import pandas as pd
 
-path_to_train_csv = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\train.csv'
-path_to_test_csv = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\test.csv'
+import pandas as pd
+import os
+from datetime import date
+path_to_train_csv = r'the_garden_nerd\train.csv'
+path_to_test_csv = r'the_garden_nerd\test.csv'
+
+train_dir_path = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\train'
+test_dir_path = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\test'
 
 train_df = pd.read_csv(path_to_train_csv)
 test_df = pd.read_csv(path_to_test_csv)
 
+
+print(len(os.listdir(train_dir_path)))
+# print(train_df.head())
+# print(test_df.head())
+
+# get no of images per category
+flowerClasses = train_df.category.unique()
+print("perClass_nb_of_imgs:", train_df.category.value_counts())
