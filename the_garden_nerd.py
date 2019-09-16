@@ -19,13 +19,31 @@ TODO:
 # * Add Column in dframe for img_path
 # * Check no of images available per class
 # * Decide upon model architecture to be applied.
+# * Refer <https://www.kaggle.com/carlolepelaars/efficientnetb5-with-keras-aptos-2019>
 """
 
-
-import pandas as pd
+import cv2
 import os
 from datetime import date
 import matplotlib.pyplot as plt
+
+
+def displayImageData(in_df,no_of_sample=9):
+    fig = plt.figure("EDA Image Data")
+    fig.subplots_adjust(hspace=0.7, wspace=0.1)
+    fig.suptitle('Understanding Image Data', fontsize=16)
+
+    for n, path in enumerate(in_df.img_path[:no_of_sample]):
+        label = str(in_df.category[n])
+        ImgTitle = in_df.image_id[n] +'_'+label
+        Img = cv2.imread(path)
+        #Note: Adjust the subplot grid so nb_of_images fits pefect ina grid.
+        ax = fig.add_subplot(3,3,(n+1))
+        plt.imshow(cv2.cvtColor(Img, cv2.COLOR_BGR2RGB))
+        ax.set_title(ImgTitle)
+        plt.axis('off')
+    plt.show()
+    return
 
 path_to_train_csv = r'the_garden_nerd\train.csv'
 path_to_test_csv = r'the_garden_nerd\test.csv'
@@ -52,3 +70,15 @@ plt.xticks(rotation='vertical')
 plt.xlabel("Flower Class")
 plt.ylabel("Freq")
 plt.savefig('EDA_class_distribution.png')
+
+
+train_df.image_id = train_df.image_id.astype(str)
+
+train_df['img_path'] = os.getcwd()+  '\\data\\train\\' + train_df.image_id[:] + '.jpg'
+
+# Add Routie To display sample data
+displayImageData(train_df)
+
+
+
+
