@@ -25,6 +25,8 @@ TODO:
 import pandas as pd
 import os
 from datetime import date
+import matplotlib.pyplot as plt
+
 path_to_train_csv = r'the_garden_nerd\train.csv'
 path_to_test_csv = r'the_garden_nerd\test.csv'
 
@@ -42,3 +44,11 @@ print(len(os.listdir(train_dir_path)))
 # get no of images per category
 flowerClasses = train_df.category.unique()
 print("perClass_nb_of_imgs:", train_df.category.value_counts())
+
+# EDA: Lets find out the class distribtion 
+train_df.category.value_counts().sort_index().plot(kind="bar",figsize=(20,10),rot=0)
+plt.title("Flower Class Distribution")
+plt.xticks(rotation='vertical')
+plt.xlabel("Flower Class")
+plt.ylabel("Freq")
+plt.savefig('EDA_class_distribution.png')
