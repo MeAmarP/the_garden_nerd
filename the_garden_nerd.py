@@ -32,12 +32,15 @@ import matplotlib.pyplot as plt
 #For CNN
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, ZeroPadding3D
-from tensorflow.keras.layers import (Conv2D, MaxPooling3D,MaxPooling2D)
+from tensorflow.keras.layers import Conv2D, MaxPooling3D,MaxPooling2D,GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam, RMSprop
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import  ReduceLROnPlateau
+
+#
+import efficientnet.efficientnet.tfkeras as efn
 
 
-IMG_SIZE = 456 # Cause EfficientNetB5 - (456, 456, 3)
 def displayImageData(in_df,no_of_sample=9):
     """Disaplay Sample Image data
     
@@ -83,40 +86,108 @@ def get_preds_and_labels(model, generator):
     # Flatten list of numpy arrays
     return np.concatenate(preds).ravel(), np.concatenate(labels).ravel()
 
-path_to_train_csv = r'the_garden_nerd\train.csv'
-path_to_test_csv = r'the_garden_nerd\test.csv'
+#==============================================================================
+path_to_train_csv = 'train.csv'
+path_to_test_csv = 'test.csv'
 
-train_dir_path = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\train'
-test_dir_path = r'F:\Dataset\forFatNinja\hEarth_dQuest_flowerRecg\HE_Challenge_data\data\test'
+train_dir_path = 'F:/Dataset/forFatNinja/hEarth_dQuest_flowerRecg/HE_Challenge_data/data/train'
+test_dir_path = 'F:/Dataset/forFatNinja/hEarth_dQuest_flowerRecg/HE_Challenge_data/data/test'
 
 train_df = pd.read_csv(path_to_train_csv)
 test_df = pd.read_csv(path_to_test_csv)
 
+
+#===============================================================================
+# EDA: Lets find out more about dataset
+#===============================================================================
 
 print(len(os.listdir(train_dir_path)))
 # print(train_df.head())
 # print(test_df.head())
 
 # get no of images per category
-flowerClasses = train_df.category.unique()
-print("perClass_nb_of_imgs:", train_df.category.value_counts())
+#flowerClasses = train_df.category.unique()
+#print("perClass_nb_of_imgs:", train_df.category.value_counts())
 
-# EDA: Lets find out the class distribtion 
-train_df.category.value_counts().sort_index().plot(kind="bar",figsize=(20,10),rot=0)
-plt.title("Flower Class Distribution")
-plt.xticks(rotation='vertical')
-plt.xlabel("Flower Class")
-plt.ylabel("Freq")
-plt.savefig('EDA_class_distribution.png')
-
+# Disply no of images per category
+#train_df.category.value_counts().sort_index().plot(kind="bar",figsize=(20,10),rot=0)
+#plt.title("Flower Class Distribution")
+#plt.xticks(rotation='vertical')
+#plt.xlabel("Flower Class")
+#plt.ylabel("Nb_Of_Imgs")
+#plt.savefig('EDA_class_distribution.png')
 
 train_df.image_id = train_df.image_id.astype(str)
-
 #Add Img_path Column to access images in Dataframe
-train_df['img_path'] = os.getcwd()+  '\\data\\train\\' + train_df.image_id[:] + '.jpg'
-
-# Add Routie To display sample data
-displayImageData(train_df)
-
+train_df['img_path'] = train_dir_path + '/' + train_df.image_id[:] + '.jpg'
+# Add Routin To display sample data
+#displayImageData(train_df)
 
 
+#===============================================================================
+# Add Image augmentation to our generator
+#===============================================================================
+IMG_SIZE = 456 # Cause EfficientNetB5 - (456, 456, 3)
+BATCH_SIZE = 4
+train_datagen = ImageDataGenerator(rotation_range=360,
+                                   horizontal_flip=True,
+                                   vertical_flip=True,
+                                   validation_split=0.15,                                 
+                                   rescale=1 / 255.)
+
+train_generator = train_datagen.flow_from_dataframe(train_df, 
+                                                    x_col='img_path', 
+                                                    y_col='category',
+                                                    directory = None,
+                                                    target_size=(IMG_SIZE, IMG_SIZE),
+                                                    batch_size=BATCH_SIZE,
+                                                    class_mode='other', 
+                                                    subset='training')
+
+val_generator = train_datagen.flow_from_dataframe(train_df, 
+                                                  x_col='img_path', 
+                                                  y_col='category',
+                                                  directory = None,
+                                                  target_size=(IMG_SIZE, IMG_SIZE),
+                                                  batch_size=BATCH_SIZE,
+                                                  class_mode='other',
+                                                  subset='validation')
+
+#===============================================================================
+# Compile Model
+#===============================================================================
+# Load in EfficientNetB5
+path_to_efnB5_weights = 'efficientnet-weights/efficientnet-b5_imagenet_1000_notop.h5'
+conv_model = efn.EfficientNetB5(weights=None,
+                                include_top=False,
+                                input_shape=(IMG_SIZE, IMG_SIZE, 3))
+conv_model.load_weights(path_to_efnB5_weights)
+
+model = Sequential()
+model.add(conv_model)
+model.add(GlobalAveragePooling2D())
+model.add(Dropout(0.5))
+model.add(Dense(5, activation="relu"))
+model.add(Dense(1, activation="linear"))
+
+model.compile(loss='mse',
+              optimizer=Adam(lr=0.00005), 
+              metrics=['mse', 'acc'])
+print(model.summary())
+
+# Callbacks
+rlr = ReduceLROnPlateau(monitor='val_loss', 
+                        factor=0.5, 
+                        patience=4, 
+                        verbose=1, 
+                        mode='auto', 
+                        epsilon=0.0001)
+
+
+# Begin training
+model.fit_generator(train_generator,
+                    steps_per_epoch=10,
+                    epochs=10,
+                    validation_data=val_generator,
+                    validation_steps = 10,
+                    callbacks=[rlr])
