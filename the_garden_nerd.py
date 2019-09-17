@@ -22,13 +22,31 @@ TODO:
 # * Refer <https://www.kaggle.com/carlolepelaars/efficientnetb5-with-keras-aptos-2019>
 """
 
+import pandas as pd
+import numpy as np
 import cv2
 import os
 from datetime import date
 import matplotlib.pyplot as plt
 
+#For CNN
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, ZeroPadding3D
+from tensorflow.keras.layers import (Conv2D, MaxPooling3D,MaxPooling2D)
+from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+
+IMG_SIZE = 456 # Cause EfficientNetB5 - (456, 456, 3)
 def displayImageData(in_df,no_of_sample=9):
+    """Disaplay Sample Image data
+    
+    Arguments:
+        in_df {pandas dataframe} -- Input train Dataframe with Img_Path Column
+    
+    Keyword Arguments:
+        no_of_sample {int} -- Number of Image samples to display (default: {9})
+    """
     fig = plt.figure("EDA Image Data")
     fig.subplots_adjust(hspace=0.7, wspace=0.1)
     fig.suptitle('Understanding Image Data', fontsize=16)
@@ -44,6 +62,38 @@ def displayImageData(in_df,no_of_sample=9):
         plt.axis('off')
     plt.show()
     return
+
+def get_preds_and_labels(model, generator):
+    """Get predictions and labels from the generator
+    
+    Arguments:
+        model {[type]} -- [description]
+        generator {[type]} -- [description]
+    
+    Returns:
+        [type] -- [description]
+    """
+    BATCH_SIZE = 4
+    preds = []
+    labels = []
+    for _ in range(int(np.ceil(generator.samples / BATCH_SIZE))):
+        x, y = next(generator)
+        preds.append(model.predict(x))
+        labels.append(y)
+    # Flatten list of numpy arrays
+    return np.concatenate(preds).ravel(), np.concatenate(labels).ravel()
+
+def preprocess_img(src_img_path,img_size):
+    """[summary]
+    
+    Arguments:
+        img_path {string} -- path to input image
+        img_size {[type]} -- image resize value
+    """
+    MainImg = cv2.imread(src_img_path)
+    MainImg_out = cv2.resize(MainImg,(img_size,img_size), interpolation=cv2.INTER_LANCZOS4)
+    MainImg_out = cv2.cvtColor(MainImg_out,cv2.COLOR_BGR2RGB)
+    return MainImg_out
 
 path_to_train_csv = r'the_garden_nerd\train.csv'
 path_to_test_csv = r'the_garden_nerd\test.csv'
@@ -74,11 +124,11 @@ plt.savefig('EDA_class_distribution.png')
 
 train_df.image_id = train_df.image_id.astype(str)
 
+#Add Img_path Column to access images in Dataframe
 train_df['img_path'] = os.getcwd()+  '\\data\\train\\' + train_df.image_id[:] + '.jpg'
 
 # Add Routie To display sample data
 displayImageData(train_df)
-
 
 
 
