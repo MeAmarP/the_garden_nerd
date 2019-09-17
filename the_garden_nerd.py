@@ -83,18 +83,6 @@ def get_preds_and_labels(model, generator):
     # Flatten list of numpy arrays
     return np.concatenate(preds).ravel(), np.concatenate(labels).ravel()
 
-def preprocess_img(src_img_path,img_size):
-    """[summary]
-    
-    Arguments:
-        img_path {string} -- path to input image
-        img_size {[type]} -- image resize value
-    """
-    MainImg = cv2.imread(src_img_path)
-    MainImg_out = cv2.resize(MainImg,(img_size,img_size), interpolation=cv2.INTER_LANCZOS4)
-    MainImg_out = cv2.cvtColor(MainImg_out,cv2.COLOR_BGR2RGB)
-    return MainImg_out
-
 path_to_train_csv = r'the_garden_nerd\train.csv'
 path_to_test_csv = r'the_garden_nerd\test.csv'
 
